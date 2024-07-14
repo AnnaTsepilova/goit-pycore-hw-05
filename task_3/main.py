@@ -2,15 +2,14 @@ import sys
 import re
 from pathlib import Path
 
-message_stats = {}
+##message_stats = {}
 
 def parse_log_line(line: str) -> dict:
-    parsed = re.split(r"^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s(\w+)\s(.*)$", line.strip())
-
-    print(parsed)
-
-    log_type = parsed[2]
-    count_logs_by_level(log_type)
+    '''
+    Parse log line in format: DATE LEVEL MESSAGE
+    '''
+    parsed = re.split(r"^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s(\w+)\s(.*)$", line)
+    return {'date': parsed[1], 'level': parsed[2], 'message': parsed[3]}
 
 def load_logs(file_path: str) -> list:
     p = Path(file_path)
@@ -19,34 +18,54 @@ def load_logs(file_path: str) -> list:
         return False
 
     with open(file_path, "r", encoding="utf-8") as fh:
-        for line in fh.readlines():
-            parse_log_line(line)
-        ##lines = [el.strip() for el in fh.readlines()]
+        lines = [el.strip() for el in fh.readlines()]
+        ## Parse file line by line
+        # for line in fh.readlines():
+        #     parse_log_line(line.strip())
 
     ## Handle empty file
-    # if len(lines) == 0:
-    #     print(f"Error: records not found. File `{file_path}`")
-    #     return False
+    if len(lines) == 0:
+        print(f"Error: records not found. File `{file_path}`")
+        return False
 
-    return True
+    return lines
 
 
 def filter_logs_by_level(logs: list, level: str) -> list:
-    pass
+    '''
+    Function filter and return logs by level
+    '''
+    return list(filter(lambda log: log['level'] == level, logs))
 
-def count_logs_by_level(type: str):
-    if not message_stats.get(type):
-        message_stats[type] = 1
-    else:
-        message_stats[type] += 1
+def count_logs_by_level(logs: list) -> dict:
+    message_stats = {}
+    for log in logs:
+        if not message_stats.get(log['level']):
+            message_stats[log['level']] = 1
+        else:
+            message_stats[log['level']] += 1
+
+    return message_stats
 
 def display_log_counts(counts: dict):
-    print(message_stats)
+    print("Рівень логування | Кількість")
+    print('-' * 17 + '|' + '-' * 10)
+    for log_type, amount in counts.items():
+        print(f"{log_type}\t\t |{amount}")
 
 def main():
     if len(sys.argv) > 1:
-        load_logs(sys.argv[1])
-        display_log_counts(None)
+        raw_lines = load_logs(sys.argv[1])
+
+        parsed_lines = []
+        for line in raw_lines:
+            parsed_lines.append(parse_log_line(line))
+
+        message_stats = count_logs_by_level(parsed_lines)
+        display_log_counts(message_stats)
+
+        filtered = filter_logs_by_level(parsed_lines, "INFO")
+        [print(f"{f['date']} {f['level']} {f['message']}") for f in filtered]
     else:
         print(f"  Usage: main.py LOG_FILE [MESSAGE_TYPE]")
 
