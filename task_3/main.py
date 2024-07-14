@@ -10,7 +10,7 @@ def parse_log_line(line: str) -> dict:
     parsed = re.split(r"^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s(\w+)\s(.*)$", line)
     return {'date': parsed[1], 'level': parsed[2].upper(), 'message': parsed[3]}
 
-def load_logs(file_path: str) -> list:
+def load_logs(file_path: str) -> list | bool:
     p = Path(file_path)
     if not p.exists():
         print(f"Error: file `{file_path}` not found")
@@ -50,9 +50,18 @@ def main():
 
         raw_lines = load_logs(log_path)
 
+        if not raw_lines:
+            return False
+
         parsed_lines = []
-        for line in raw_lines:
-            parsed_lines.append(parse_log_line(line))
+        for num, line in enumerate(raw_lines):
+            try:
+                parsed_log = parse_log_line(line)
+            except Exception as e:
+                print(f"Error parsing line {num}. Reason: {e}")
+                continue
+
+            parsed_lines.append(parsed_log)
 
         message_stats = count_logs_by_level(parsed_lines)
         display_log_counts(message_stats)
@@ -62,7 +71,7 @@ def main():
             filtered = filter_logs_by_level(parsed_lines, log_level)
             [print(f"{f['date']} {f['level']} {f['message']}") for f in filtered]
     else:
-        print(f"  Usage: main.py LOG_FILE [MESSAGE_TYPE]")
+        print("  Usage: main.py LOG_FILE [MESSAGE_TYPE]")
 
 if __name__ == "__main__":
     main()
