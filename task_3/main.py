@@ -1,7 +1,6 @@
 import sys
 import re
 import collections
-from pathlib import Path
 
 def parse_log_line(line: str) -> dict:
     '''
@@ -11,13 +10,12 @@ def parse_log_line(line: str) -> dict:
     return {'date': parsed[1], 'level': parsed[2].upper(), 'message': parsed[3]}
 
 def load_logs(file_path: str) -> list | bool:
-    p = Path(file_path)
-    if not p.exists():
-        print(f"Error: file `{file_path}` not found")
+    try:
+        with open(file_path, "r", encoding="utf-8") as fh:
+            lines = [el.strip() for el in fh.readlines()]
+    except Exception as e:
+        print(f"Error reading file. {e.__class__.__name__}: {e}")
         return False
-
-    with open(file_path, "r", encoding="utf-8") as fh:
-        lines = [el.strip() for el in fh.readlines()]
 
     ## Handle empty file
     if len(lines) == 0:
