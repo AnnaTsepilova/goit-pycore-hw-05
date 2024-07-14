@@ -57,7 +57,12 @@ def display_log_counts(counts: dict):
 def main():
     if len(sys.argv) > 1:
         log_path = sys.argv[1]
-        log_level = sys.argv[2]
+
+        log_level = False
+        try:
+            log_level = sys.argv[2]
+        except Exception:
+            pass
 
         parsed_lines = load_logs(log_path)
 
