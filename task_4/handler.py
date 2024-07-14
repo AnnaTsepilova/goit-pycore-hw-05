@@ -2,6 +2,7 @@ import re
 from typing import Callable
 from functools import wraps
 
+## Dictionary of error messages
 error_message = {
     "INVALID_PHONENUMBER": "Phone number should contain only digits",
     "INVALID_COMMAND": "Error: Invalid command.",
@@ -25,6 +26,7 @@ def input_error(func: Callable):
     def inner(*args, **kwargs):
         action = func.__name__.split('_')
 
+        ## Additional message hint to error message
         additional_message = ""
         match action[0]:
             case 'show':
@@ -68,7 +70,7 @@ def add_contact(args, contacts):
         raise Exception(error_message["INVALID_PHONENUMBER"])
 
     if contacts.get(name):
-        return "Contact already exist."
+        raise Exception(error_message["CONTACT_EXIST"])
 
     contacts[name] = phone
     return "Contact added."
