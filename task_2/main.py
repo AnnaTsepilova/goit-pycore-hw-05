@@ -10,6 +10,9 @@ def generator_numbers(text: str):
             yield float(word)
 
 def sum_profit(text: str, func: Callable):
+    '''
+    Function calculate total profit
+    '''
     total_amount = 0
     for amount in func(text):
         total_amount += amount
