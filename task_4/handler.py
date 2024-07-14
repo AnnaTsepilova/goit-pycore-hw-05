@@ -4,9 +4,9 @@ from functools import wraps
 
 error_message = {
     "INVALID_PHONENUMBER": "Phone number should contain only digits",
-    "INVALID_COMMAND": "Error: Invalid command",
+    "INVALID_COMMAND": "Error: Invalid command.",
+    "INVALID_ARGUMENTS": "Error: invalid arguments.",
     "UNKNOWN_COMMAND": "Error: Unknown command",
-    "INVALID_ARGUMENTS": "Error: invalid arguments. Usage: {} NAME PHONE",
     "CONTACT_EXIST": "Contact already exist.",
     "CONTACT_NOT_FOUND": "Contact does not exist."
     }
@@ -15,7 +15,7 @@ def validate_phone(phone: str):
     '''
     Simple phone number validation
     '''
-    return re.match(r"[+?\d]", phone.strip())
+    return re.match(r"^\+?(\d+)$", phone.strip())
 
 def input_error(func: Callable):
     '''
@@ -24,18 +24,29 @@ def input_error(func: Callable):
     @wraps(func)
     def inner(*args, **kwargs):
         action = func.__name__.split('_')
+
+        additional_message = ""
+        match action[0]:
+            case 'show':
+                additional_message = "Usage: phone PHONE"
+            case 'add' | 'change':
+                additional_message = f"Usage: {action[0]} NAME PHONE"
+
         try:
             return func(*args, **kwargs)
         except ValueError:
-            return error_message["INVALID_ARGUMENTS"].format(action[0])
+            return error_message["INVALID_ARGUMENTS"] + ' ' + additional_message
         except KeyError:
             return error_message["CONTACT_NOT_FOUND"]
         except IndexError:
-            return error_message["INVALID_COMMAND"]
+            return error_message["INVALID_COMMAND"] + ' ' + additional_message
 
     return inner
 
-def validate_input_phone(func: Callable):
+def custom_error(func: Callable):
+    '''
+    Custom error decorator for validation
+    '''
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -45,7 +56,7 @@ def validate_input_phone(func: Callable):
     return inner
 
 
-@validate_input_phone
+@custom_error
 @input_error
 def add_contact(args, contacts):
     '''
@@ -62,7 +73,7 @@ def add_contact(args, contacts):
     contacts[name] = phone
     return "Contact added."
 
-@validate_input_phone
+@custom_error
 @input_error
 def change_contact(args, contacts):
     '''
@@ -74,7 +85,7 @@ def change_contact(args, contacts):
         raise Exception(error_message["INVALID_PHONENUMBER"])
 
     if contacts.get(name) is None:
-        return "Contact does not exist."
+        raise KeyError
 
     contacts[name] = phone
     return "Contact changed."
