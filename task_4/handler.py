@@ -1,4 +1,15 @@
 import re
+from typing import Callable
+from functools import wraps
+
+error_message = {
+    "INVALID_PHONENUMBER": "Phone number should contain only digits",
+    "INVALID_COMMAND": "Error: Invalid command",
+    "UNKNOWN_COMMAND": "Error: Unknown command",
+    "INVALID_ARGUMENTS": "Error: invalid arguments. Usage: {} NAME PHONE",
+    "CONTACT_EXIST": "Contact already exist.",
+    "CONTACT_NOT_FOUND": "Contact does not exist."
+    }
 
 def validate_phone(phone: str):
     '''
@@ -6,16 +17,44 @@ def validate_phone(phone: str):
     '''
     return re.match(r"[+?\d]", phone.strip())
 
+def input_error(func: Callable):
+    '''
+    Generic input decorator for validation user input
+    '''
+    @wraps(func)
+    def inner(*args, **kwargs):
+        action = func.__name__.split('_')
+        try:
+            return func(*args, **kwargs)
+        except ValueError:
+            return error_message["INVALID_ARGUMENTS"].format(action[0])
+        except KeyError:
+            return error_message["CONTACT_NOT_FOUND"]
+        except IndexError:
+            return error_message["INVALID_COMMAND"]
+
+    return inner
+
+def validate_input_phone(func: Callable):
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            return f"Error: {e}"
+
+    return inner
+
+
+@validate_input_phone
+@input_error
 def add_contact(args, contacts):
     '''
     Function add contacts
     '''
-    if len(args) < 2:
-        return "Error: invalid arguments. Usage: add NAME PHONE"
     name, phone = args
 
     if validate_phone(phone) is None:
-        return "Phone number should contain only digits"
+        raise Exception(error_message["INVALID_PHONENUMBER"])
 
     if contacts.get(name):
         return "Contact already exist."
@@ -23,17 +62,16 @@ def add_contact(args, contacts):
     contacts[name] = phone
     return "Contact added."
 
-
+@validate_input_phone
+@input_error
 def change_contact(args, contacts):
     '''
     Function change existing contacts
     '''
-    if len(args) < 2:
-        return "Error: invalid arguments. Usage: change NAME PHONE"
     name, phone = args
 
     if validate_phone(phone) is None:
-        return "Phone number should contain only digits"
+        raise Exception(error_message["INVALID_PHONENUMBER"])
 
     if contacts.get(name) is None:
         return "Contact does not exist."
@@ -51,11 +89,12 @@ def list_contacts(contacts):
         output = f"{output}Contact: {name} - {phone}\n"
     return output
 
+@input_error
 def show_phone(args, contacts):
     '''
     Function show phone of added contact
     '''
     name = args[0]
-    phone = contacts.get(name)
+    phone = contacts[name]
 
-    return phone if phone else "Contact not found"
+    return phone

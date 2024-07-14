@@ -29,7 +29,7 @@ def main():
             case "all":
                 print(handler.list_contacts(contacts))
             case _:
-                print("Invalid command.")
+                print(handler.error_message["UNKNOWN_COMMAND"])
 
 if __name__ == "__main__":
     main()
