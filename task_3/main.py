@@ -24,7 +24,17 @@ def load_logs(file_path: str) -> list | bool:
         print(f"Error: records not found. File `{file_path}`")
         return False
 
-    return lines
+    parsed_lines = []
+    for num, line in enumerate(lines):
+        try:
+            parsed_log = parse_log_line(line)
+        except Exception as e:
+            print(f"Unable to parse line {num}. Reason: {e}. Skipping")
+            continue
+
+        parsed_lines.append(parsed_log)
+
+    return parsed_lines
 
 
 def filter_logs_by_level(logs: list, level: str) -> list:
@@ -34,6 +44,9 @@ def filter_logs_by_level(logs: list, level: str) -> list:
     return list(filter(lambda log: log['level'] == level, logs))
 
 def count_logs_by_level(logs: list) -> dict:
+    '''
+    Function calculate each log level
+    '''
     message_stats = dict(collections.Counter(map(lambda log: log['level'], logs)))
     return message_stats
 
@@ -48,30 +61,20 @@ def main():
         log_path = sys.argv[1]
         log_level = sys.argv[2]
 
-        raw_lines = load_logs(log_path)
+        parsed_lines = load_logs(log_path)
 
-        if not raw_lines:
+        if not parsed_lines:
             return False
-
-        parsed_lines = []
-        for num, line in enumerate(raw_lines):
-            try:
-                parsed_log = parse_log_line(line)
-            except Exception as e:
-                print(f"Error parsing line {num}. Reason: {e}")
-                continue
-
-            parsed_lines.append(parsed_log)
 
         message_stats = count_logs_by_level(parsed_lines)
         display_log_counts(message_stats)
 
         if log_level:
             log_level = log_level.upper().strip()
-            filtered = filter_logs_by_level(parsed_lines, log_level)
-            [print(f"{f['date']} {f['level']} {f['message']}") for f in filtered]
+            for f in filter_logs_by_level(parsed_lines, log_level):
+                print(f"{f['date']} {f['level']} {f['message']}")
     else:
-        print("  Usage: main.py LOG_FILE [MESSAGE_TYPE]")
+        print("  Usage: main.py LOG_FILE [LOG_LEVEL]")
 
 if __name__ == "__main__":
     main()
