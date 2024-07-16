@@ -97,6 +97,8 @@ def list_contacts(contacts):
     '''
     Function return all existing contacts
     '''
+    if not contacts:
+        return "Contacts are empty"
     output = ""
     for name, phone in contacts.items():
         output = f"{output}Contact: {name} - {phone}\n"

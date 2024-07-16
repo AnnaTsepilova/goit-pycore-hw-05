@@ -10,6 +10,7 @@ def parse_log_line(line: str) -> dict:
     return {'date': parsed[1], 'level': parsed[2].upper(), 'message': parsed[3]}
 
 def load_logs(file_path: str) -> list | bool:
+    ## Read file and handle any kind of issues
     try:
         with open(file_path, "r", encoding="utf-8") as fh:
             lines = [el.strip() for el in fh.readlines()]
@@ -23,6 +24,7 @@ def load_logs(file_path: str) -> list | bool:
         return False
 
     parsed_lines = []
+    ## Parse each line and store into list
     for num, line in enumerate(lines):
         try:
             parsed_log = parse_log_line(line)
@@ -49,6 +51,9 @@ def count_logs_by_level(logs: list) -> dict:
     return message_stats
 
 def display_log_counts(counts: dict):
+    '''
+    Function print formatted logs stats
+    '''
     print("Рівень логування | Кількість")
     print('-' * 17 + '|' + '-' * 10)
     for log_type, amount in counts.items():
